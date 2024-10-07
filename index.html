@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gas Leakage Detection Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h1 {
+            color: #333;
+        }
+        .alert {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gas Leakage Detection Dashboard</h1>
+    <div id="status">Connecting to WebSocket server...</div>
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>MQ2</th>
+                <th>MQ3</th>
+                <th>MQ5</th>
+                <th>MQ6</th>
+                <th>MQ7</th>
+                <th>MQ8</th>
+                <th>MQ135</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:5000');
+    
+        // Define the thresholds
+        const thresholds = {
+            MQ2: 677,
+            MQ3: 550,
+            MQ5: 404,
+            MQ6: 399,
+            MQ7: 680,
+            MQ8: 542,
+            MQ135: 416
+        };
+    
+        ws.onopen = () => {
+            document.getElementById('status').innerText = 'Connected to WebSocket server';
+        };
+    
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const tbody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+            const newRow = tbody.insertRow();
+    
+            // Get the current timestamp
+            const timestamp = new Date().toLocaleString();
+            newRow.insertCell(0).innerText = timestamp; // Insert timestamp
+    
+            // Create a function to apply styles based on thresholds
+            const applyStyles = (value, threshold) => {
+                const cell = newRow.insertCell();
+                cell.innerText = value;
+                if (value > threshold) {
+                    cell.style.color = 'red'; // Change text color to red if threshold exceeded
+                }
+            };
+    
+            // Check for gas leakage and alert
+            const isGasLeakDetected = 
+                data.MQ2 > thresholds.MQ2 || 
+                data.MQ3 > thresholds.MQ3 || 
+                data.MQ5 > thresholds.MQ5 || 
+                data.MQ6 > thresholds.MQ6 || 
+                data.MQ7 > thresholds.MQ7 || 
+                data.MQ8 > thresholds.MQ8 || 
+                data.MQ135 > thresholds.MQ135;
+    
+            if (isGasLeakDetected) {
+                alert('ALERT: Gas leakage detected!'); // Trigger an alert dialog
+            }
+    
+            // Insert sensor readings with styles
+            applyStyles(data.MQ2, thresholds.MQ2);
+            applyStyles(data.MQ3, thresholds.MQ3);
+            applyStyles(data.MQ5, thresholds.MQ5);
+            applyStyles(data.MQ6, thresholds.MQ6);
+            applyStyles(data.MQ7, thresholds.MQ7);
+            applyStyles(data.MQ8, thresholds.MQ8);
+            applyStyles(data.MQ135, thresholds.MQ135);
+        };
+    
+        ws.onclose = () => {
+            document.getElementById('status').innerText = 'Disconnected from server';
+        };
+    </script>
+        
+</body>
+</html>
